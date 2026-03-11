@@ -13,12 +13,13 @@ import { ACCEPTED_PDF_TYPES, ACCEPTED_IMAGE_TYPES, DEFAULT_VOICE } from '@/lib/c
 import FileUploader from './FileUploader';
 import VoiceSelector from './VoiceSelector';
 import LoadingOverlay from './LoadingOverlay';
-import {useAuth, useUser} from "@clerk/nextjs";
+import {useAuth} from "@clerk/nextjs";
 import { toast } from 'sonner';
 
 import {useRouter} from "next/navigation";
 import {parsePDFFile} from "@/lib/utils";
 import {upload} from "@vercel/blob/client";
+import {checkBookExists, createBook, saveBookSegments} from "@/lib/actions/book.actions";
 
 const UploadForm = () => {
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,9 +52,9 @@ const UploadForm = () => {
 		// PostHog -> Track Book Uploads...
 
 		try {
-			/*const existsCheck = await checkBookExists(data.title);
+			const existsCheck = await checkBookExists(data.title);
 
-			if(existsCheck.exists && existsCheck.book) {
+			if(existsCheck?.exists && existsCheck.book) {
 				toast.info("Book with same title already exists.");
 				form.reset()
 				router.push(`/books/${existsCheck.book.slug}`)
@@ -111,25 +112,28 @@ const UploadForm = () => {
 
 			if(!book.success) {
 				toast.error(book.error as string || "Failed to create book");
-				if (book.isBillingError) {
+				/*if (book.isBillingError) {
 					router.push("/subscriptions");
-				}
+				}*/
 				return;
 			}
-
-			if(book.alreadyExists) {
+console.log('book',book);
+			if(book.alreadyExists ) {
 				toast.info("Book with same title already exists.");
 				form.reset()
-				router.push(`/books/${book.data.slug}`)
+				router.push(`/books/${book.book.slug}`)
 				return;
 			}
+			if (!book.book?._id) {
+				throw new Error("Book creation failed");
+			}
 
-			const segments = await saveBookSegments(book.data._id, userId, parsedPDF.content);
-
-			if(!segments.success) {
+			//const segments = await saveBookSegments(book.data._id, userId, parsedPDF.content);
+			const segments = await saveBookSegments(book.book._id, userId, parsedPDF.content);
+			if(!segments?.success) {
 				toast.error("Failed to save book segments");
 				throw new Error("Failed to save book segments");
-			}*/
+			}
 
 			form.reset();
 			router.push('/');
